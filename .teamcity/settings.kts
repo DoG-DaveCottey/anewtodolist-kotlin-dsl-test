@@ -28,7 +28,7 @@ version = "2022.04"
 
 project {
 
-    val definedBuilds = sequential {
+    val bts = sequential {
         buildType(Maven(name = "Build", goals = "clean compile"))
         parallel {
             buildType(Maven(name = "FastTest", goals = "clean test", runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.unit.*Test"))
@@ -37,8 +37,8 @@ project {
         buildType(Maven(name = "Package", goals = "clean package", runnerArgs = "-DskipTests"))
     }.buildTypes()
 
-    definedBuilds.forEach { buildType(it)}
-    definedBuilds.last().triggers {
+    bts.forEach { buildType(it) }
+    bts.last().triggers {
         vcs {
 
         }
