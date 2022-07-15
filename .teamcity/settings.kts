@@ -35,7 +35,8 @@ project {
             buildType(Maven(name = "SlowTest", goals = "clean test", runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.integration.*Test"))
         }
         buildType(Maven(name = "Package", goals = "clean package", runnerArgs = "-DskipTests"))
-    }
+    }.buildTypes()
+
     definedBuilds.forEach { buildType(it)}
     definedBuilds.last().triggers {
         vcs {
