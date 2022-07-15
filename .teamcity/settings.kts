@@ -28,23 +28,27 @@ version = "2022.04"
 
 project {
 
-    buildType(Build)
-    buildType(Package)
-    buildType(FastTest)
-    buildType(SlowTest)
-
-    sequential {
-        buildType(Build)
+    val definedBuilds = sequential {
+        buildType(Maven(name = "Build", goals = "clean compile"))
         parallel {
-            buildType(FastTest)
-            buildType(SlowTest)
+            buildType(Maven(name = "FastTest", goals = "clean test", runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.unit.*Test"))
+            buildType(Maven(name = "SlowTest", goals = "clean test", runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.integration.*Test"))
         }
-        buildType(Package)
+        buildType(Maven(name = "Package", goals = "clean package", runnerArgs = "-DskipTests"))
     }
+    definedBuilds.forEach { buildType(it)}
+    definedBuilds.last().triggers {
+        vcs {
+
+        }
+    }
+
 }
 
-object Build : BuildType({
-    name = "Build"
+
+class Maven(name: String, goals: String, runnerArgs: String? = null): BuildType({
+    id(name.toExtID())
+    this.name = name
 
     vcs {
         root(DslContext.settingsRoot)
@@ -52,59 +56,9 @@ object Build : BuildType({
 
     steps {
         maven {
-            goals = "clean test"
-            runnerArgs = "-Dmaven.test.failure.ignore=true"
-        }
-    }
-})
-object FastTest : BuildType({
-    name = "Fast Tests"
-
-    vcs {
-        root(DslContext.settingsRoot)
-    }
-
-    steps {
-        maven {
-            goals = "clean test"
-            runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.unit.*Test"
+            this.goals = goals
+            this.runnerArgs = runnerArgs
         }
     }
 })
 
-object SlowTest : BuildType({
-    name = "Slow Tests"
-
-    vcs {
-        root(DslContext.settingsRoot)
-    }
-
-    steps {
-        maven {
-            goals = "clean test"
-            runnerArgs = "-Dmaven.test.failure.ignore=true -Dtest=*.integration.*Test"
-        }
-    }
-})
-
-object Package : BuildType({
-    name = "Package"
-
-    vcs {
-        root(DslContext.settingsRoot)
-    }
-
-    steps {
-        maven {
-            goals = "clean package"
-            runnerArgs = "-Dmaven.test.failure.ignore=true -DskipTests"
-        }
-    }
-    dependencies {
-        snapshot(Build){}
-    }
-    triggers {
-        vcs {
-        }
-    }
-})
